@@ -99,6 +99,14 @@ const ChangePassword = () => {
         >
           Đổi mật khẩu
         </Button>
+        <Button 
+          mode="outlined" 
+          style={styles.returnButton} 
+          labelStyle={styles.returnButtonText}  
+          onPress={() => navigation.goBack()}
+        >
+          Trở về
+        </Button>
       </View>
     </ScrollView>
   );
@@ -142,5 +150,16 @@ const styles = StyleSheet.create({
     color: 'red',
     alignSelf: 'flex-start',
     marginLeft: '5%',
+  },
+  returnButton: {
+    width: '90%',
+    borderRadius: 10,
+    justifyContent: 'center',
+    marginTop: 10,
+    borderColor: BLUE_COLOR,
+  },
+  returnButtonText: {
+    color: BLUE_COLOR,
+    fontSize: 16,
   },
 });

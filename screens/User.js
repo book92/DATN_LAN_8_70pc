@@ -61,6 +61,7 @@ const User = () =>{
                           style={[styles.icon, { tintColor: tintColor }]}
                         />
                     ),
+                    unmountOnBlur: true,
                 }}
             />
             <Drawer.Screen name="RouterMyErrorDevices" component={RouterMyErrorDevices}
@@ -73,6 +74,7 @@ const User = () =>{
                           style={[styles.icon, { tintColor: tintColor }]}
                         />
                     ),
+                    unmountOnBlur: true,
                 }}
             />
             <Drawer.Screen name="RouterSetting" component={RouterSetting}
@@ -85,6 +87,7 @@ const User = () =>{
                             style={[styles.icon, { tintColor: tintColor }]}
                         />
                     ),
+                    unmountOnBlur: true,
                 }}
             />
         </Drawer.Navigator>

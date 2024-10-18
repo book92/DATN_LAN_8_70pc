@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View, ScrollView, Alert } from "react-native";
+import { StyleSheet, Text, View, ScrollView } from "react-native";
 import { TextInput, Button } from "react-native-paper";
 import firestore from '@react-native-firebase/firestore';
 import { useMyContextController } from '../store';
@@ -56,16 +56,16 @@ const MyErrorDeviceDetail = ({ route, navigation }) => {
                     outlineColor={BLUE_COLOR}
                     textColor="black"
                 />
-                <View style={styles.buttonContainer}>
-                    <Button 
-                        mode="contained" 
-                        onPress={() => navigation.goBack()} 
-                        style={styles.button} 
-                        labelStyle={styles.buttonLabel}
-                    >
-                        Trở về
-                    </Button>
-                </View>
+            </View>
+            <View style={styles.buttonContainer}>
+                <Button 
+                    mode="contained" 
+                    onPress={() => navigation.goBack()} 
+                    style={styles.button} 
+                    labelStyle={styles.buttonLabel}
+                >
+                    Trở về
+                </Button>
             </View>
         </ScrollView>
     );
@@ -104,7 +104,8 @@ const styles = StyleSheet.create({
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 20,
+        marginTop: 1, // Add some space above the button
+        marginBottom: 50, // Add some space below the button
     },
     button: {
         flex: 1,
@@ -113,6 +114,9 @@ const styles = StyleSheet.create({
     },
     buttonLabel: {
         color: 'white',
+    },
+    contentScrollView: {
+        maxHeight: '80%',  // Adjust this value as needed
     },
 });
 

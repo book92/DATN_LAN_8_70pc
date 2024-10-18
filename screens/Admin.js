@@ -171,6 +171,7 @@ const Admin = () => {
                             routes: [{ name: 'RouterSetting', params: { screen: 'Profile' } }],
                         });
                     },
+                    unmountOnBlur: true,
                 })}
             />
         </Drawer.Navigator>

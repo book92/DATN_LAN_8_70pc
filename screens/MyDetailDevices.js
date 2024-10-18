@@ -7,6 +7,8 @@ import { captureRef } from 'react-native-view-shot';
 import storage from '@react-native-firebase/storage';
 import QRCode from 'react-native-qrcode-svg';
 import { useMyContextController } from '../store';
+import RNFS from 'react-native-fs';
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
 
 const DeviceDetail = ({ route, navigation }) => {
   const { deviceId } = route.params;
@@ -220,9 +222,83 @@ const DeviceDetail = ({ route, navigation }) => {
     });
   };
 
+  const requestStoragePermission = async () => {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        {
+          title: "Quyền truy cập bộ nhớ",
+          message: "Ứng dụng cần quyền truy cập bộ nhớ để lưu file Excel.",
+          buttonNeutral: "Hỏi lại sau",
+          buttonNegative: "Từ chối",
+          buttonPositive: "Đồng ý"
+        }
+      );
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        console.log("Quyền truy cập bộ nhớ được cấp");
+        return true;
+      } else {
+        console.log("Quyền truy cập bộ nhớ bị từ chối");
+        return false;
+      }
+    } catch (err) {
+      console.warn(err);
+      return false;
+    }
+  };
+
+  const exportQRToPDF = async () => {
+    try {
+      console.log('Starting PDF export...');
+
+      const base64Image = await captureRef(qrRef, {
+        format: 'png',
+        quality: 0.8,
+      });
+
+      const htmlContent = `
+        <h1>${device.name}</h1>
+        <img src="${base64Image}" alt="QR Code" />
+      `;
+
+      const fileName = `${device.name.replace(/\s+/g, '_')}_${departmentName.replace(/\s+/g, '_')}`;
+
+      const options = {
+        html: htmlContent,
+        fileName: fileName,
+        directory: RNFS.DownloadDirectoryPath,
+      };
+
+      const file = await RNHTMLtoPDF.convert(options);
+      const filePath = `${RNFS.DownloadDirectoryPath}/${fileName}.pdf`;
+
+      await RNFS.moveFile(file.filePath, filePath);
+
+      console.log('File saved successfully:', filePath);
+      Alert.alert('Thành công', `File đã được lưu vào: ${filePath}`);
+
+    } catch (error) {
+      console.error('Error in PDF export:', error);
+      Alert.alert('Lỗi', `Không thể xuất file PDF: ${error.message}`);
+    }
+  };
+
+  const confirmExport = () => {
+    Alert.alert(
+      'Xuất PDF',
+      'Bạn muốn xuất mã QR thành file PDF?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Xác nhận', onPress: exportQRToPDF },
+      ],
+      { cancelable: true }
+    );
+  };
+
   if (!device) {
     return <Text>Đang tải...</Text>;
   }
+
 
   return (
     <ScrollView style={styles.container}>
@@ -352,8 +428,13 @@ const DeviceDetail = ({ route, navigation }) => {
             <Text style={[styles.value, { color: '#0000FF' }]}>{device.note}</Text>
           )}
           <Text style={styles.label}>QR:</Text>
-          <View ref={qrRef} collapsable={false} style={styles.qrContainer}>
-            <QRCode value={qrValue || ' '} size={200} />
+          <View style={styles.qrSection}>
+            <View ref={qrRef} collapsable={false} style={styles.qrContainer}>
+              <QRCode value={qrValue || ' '} size={200} />
+            </View>
+            <TouchableOpacity style={styles.exportButton} onPress={confirmExport}>
+              <Text style={styles.exportButtonText}>Xuất PDF</Text>
+            </TouchableOpacity>
           </View>
           <View style={styles.buttonContainer}>
             {isEditing ? (
@@ -383,18 +464,31 @@ const DeviceDetail = ({ route, navigation }) => {
                   style={styles.button}
                   labelStyle={styles.buttonText}
                 >
-                Cập nhật
+                  Cập nhật
                 </Button>
-                <Button mode='contained' style={styles.buttonText}  onPress={()=> navigation.navigate("Error", {device})}>
-                Báo lỗi
-               </Button>
-               <Button mode='contained' style={styles.buttonText} onPress={()=> navigation.navigate("MyDevices", {departmentName})}>
-                Trở về
-               </Button>
-               
+                <Button 
+                  mode='contained' 
+                  style={styles.button} 
+                  labelStyle={styles.buttonText}
+                  onPress={() => navigation.navigate("Error", {device})}
+                >
+                  Báo lỗi
+                </Button>
               </>
             )}
           </View>
+          {!isEditing && (
+            <View style={styles.backButtonContainer}>
+              <Button 
+                mode='contained' 
+                style={styles.backButton} 
+                labelStyle={styles.buttonText}
+                onPress={() => navigation.navigate("MyDevices", {departmentName})}
+              >
+                Trở về
+              </Button>
+            </View>
+          )}
           {loading && <ActivityIndicator size="large" color="#0000FF" />}
         </>
       )}
@@ -423,6 +517,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginVertical: 5,
     color: '#0000FF',
+  },
+  exportButton: {
+    backgroundColor: '#0000CD',
+    padding: 10,
+    borderRadius: 5,
   },
   input: {
     fontSize: 16,
@@ -476,24 +575,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 20,
-    marginBottom: 50,
+    marginBottom: 20, // Reduced bottom margin
   },
   button: {
     flex: 1,
     marginHorizontal: 5,
     backgroundColor: '#0000CD',
+    paddingHorizontal: 8,
   },
   cancelButton: {
     backgroundColor: '#FF6347',
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    color:"white"
+    color: "white",
+    textAlign: 'center',
+  },
+  qrSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: 10,
   },
   qrContainer: {
-    alignItems: 'center',
-    marginVertical: 10,
+    // Remove alignItems: 'center' if it exists
+  },
+  exportButton: {
+    backgroundColor: '#0000CD',
+    padding: 10,
+    borderRadius: 5,
+  },
+  exportButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
   specInputContainer: {
     flexDirection: 'row',
@@ -517,6 +632,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backButtonContainer: {
+    alignItems: 'center',
+    marginBottom: 50, // Add margin at the bottom
+  },
+  backButton: {
+    backgroundColor: '#0000CD',
+    paddingHorizontal: 20, // Increased horizontal padding
+    width: '50%', // Set width to 50% of the container
   },
 });
 
